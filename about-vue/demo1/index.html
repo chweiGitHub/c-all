@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>demo1</title>
+</head>
+
+<body>
+    <div id="app">
+
+        <div id="input-area">
+            <input type="text" v-model="book">
+            <button @click="addNewBook">确定</button>
+            <div>{{book}}</div>
+        </div>
+
+
+       <book-list :list="bookList"></book-list> 
+    </div>
+    <script src="./vue.js"></script>
+    <script>
+        // 列表组件  
+        Vue.component('book-list', {
+            props: {
+                list: {
+                    type: Array,
+                    default: ['默认item']
+                }
+            },
+            data: function () {
+               return {
+                selectedIndex: '', 
+                title: '列表组件', 
+                bookList: ['全栈架构师', '后端架构师']
+               } 
+            },
+            template:  ` <div id="book-list">
+                            <div id="title">{{title}}</div>
+                            <div v-for="item in bookList" :key="item">
+                                {{ item }}
+                            </div>
+                        </div>`
+        // template:  '<button v-on:click="count++">You clicked me {{ count }} times.</button>'
+        });
+
+
+        var app = new Vue({
+            el: '#app',
+            data: {
+                title: 'title-demo1',  
+                bookList: ['1', '2'], 
+                book: ''
+            }, 
+            methods: {
+                addNewBook() { console.log('添加一个新的book . ');
+                    console.log(this.bookList);
+                    console.log(this.book);
+                    
+                    
+                    this.bookList.push(this.book); 
+                    this.book ='';  
+                }
+            },
+        });
+    </script>
+</body>
+
+</html>

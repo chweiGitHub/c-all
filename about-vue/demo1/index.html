@@ -5,39 +5,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>demo1</title>
+    <!-- <link rel="stylesheet" href="./index.css"> -->
+    <style>
+        .message-box {
+            padding: 10px 20px;
+            background: #4fc08d;
+            border: 1px solid #42b983;
+        }
+
+        .message-box-close {
+            float: right;
+            width: 26px;
+            height: 26px;
+        }
+    </style>
 </head>
 
 <body>
-    <div id="app"> 
-        <c-input @add-new-book="addNewBook"></c-input> 
-       <book-list :list="bookList"></book-list> 
+    <div id="app">
+        <c-message :show="showMessage" @close="closeMessage">
+            <template v-slot:title>
+                温馨提示
+            </template>
+            <template>
+                add new book success.
+            </template>
+        </c-message>
+
+        <c-input v-model="book" @add-new-book="addNewBook" btntxt="confirm"></c-input>
+        <c-input v-model.number="price" @add-new-book="updatePrice" btntxt="change-price"></c-input>
+
+        <div>将要添加的book为： {{book}}</div>
+
+        <book-list :list="bookList"></book-list>
     </div>
     <script src="./vue.js"></script>
     <script>
+        // 弹框组件
+        Vue.component('c-message', {
+            props: ['show'],
+            template: `
+            <div class="message-box" v-if='show'>
+                <slot name='title'></slot>
+                <slot></slot>
+                <span class="message-box-close" @click="$emit('close')">X</span>
+            </div>
+            `,
+            methods: {},
+        });
 
         // 输入组件
-        Vue.component('c-input',  {
+        Vue.component('c-input', {
+            props: ['value', 'btntxt'],
             data() {
                 return {
-                    book: ''
+                    // book: ''
                 }
             },
             methods: {
-                addNewBook(newBook) {
+                addNewBook() {
                     // 这里要注意， HTML对大小写是敏感的， 所有的 事件名都会转成小写的形式。 
-                    // 如果这里用驼峰式的命名很容易导致找不到对应的事件方法。  
-                    this.$emit('add-new-book', this.book); 
-                    this.book = '' ;  
+                    // 如果这里用驼峰式的命名很容易导致找不到对应的事件方法。   
+                    this.$emit('add-new-book');
+                    // this.book = '' ;  
+                },
+                onInput(e) {
+                    this.$emit('input', e.target.value);
                 }
             },
-            template: `
-            <div id="input-area">
-                <input type="text" v-model="book">
-                <button @click="addNewBook">确定</button>
-                <div>{{book}}</div>
-            </div>
+            template: ` 
+                <div id="input-area">
+                    <input type="text" :value="value" @input="onInput">
+                    <button @click="addNewBook">{{btntxt}}</button> 
+                </div>   
             `
-        });  
+        });
 
         // 列表组件  
         Vue.component('book-list', {
@@ -48,36 +90,54 @@
                 }
             },
             data: function () {
-               return {
-                selectedIndex: '', 
-                title: '列表组件', 
-                bookList: ['全栈架构师', '后端架构师']
-               } 
+                return {
+                    selectedIndex: '',
+                    title: '列表组件',
+                }
             },
-            template:  ` <div id="book-list">
+            template: ` <div id="book-list">
                             <div id="title">{{title}}</div>
-                            <div v-for="item in list" :key="item">
-                                {{ item }}
+                            <div v-for="(item, index) in list" :key="index">
+                               {{index+1}}:  {{ item.name }}, ￥{{item.price??'-'}}
                             </div>
                         </div>`
-        // template:  '<button v-on:click="count++">You clicked me {{ count }} times.</button>'
+            // template:  '<button v-on:click="count++">You clicked me {{ count }} times.</button>'
         });
 
 
         var app = new Vue({
             el: '#app',
             data: {
-                title: 'title-demo1',  
-                bookList: ['1', '2'], 
-                book: ''
-            }, 
+                title: 'title-demo1',
+                bookList: [{
+                    name: '1'
+                }, {
+                    name: '2'
+                }],
+                book: '',
+                showMessage: false,
+                btnTxt: 'test-btn', 
+                price: 10
+            },
             methods: {
-                addNewBook(book) { console.log('添加一个新的book . ');
-                    console.log(this.bookList);
-                    console.log(book);
-            
-                    this.bookList.push(book); 
-                    console.log(this.bookList); 
+                addNewBook() {
+                    console.log(this.book);
+
+                    this.bookList.push({
+                        name: this.book
+                    });
+                    this.book = '';
+                    this.showMessage = true;
+                },
+                closeMessage() {
+                    this.showMessage = false;
+                },
+                updatePrice() {
+                    // 下面的这种写法是无效的，没有达到响应式的目的
+                    // this.bookList.forEach(item=>item.price=this.price);  
+
+                    // 追加类的属性要用Vue.set方法来做。类似的api还有Vue.delete等。
+                    this.bookList.forEach(item=> Vue.set(item, 'price', this.price));   
                 }
             },
         });

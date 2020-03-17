@@ -8,19 +8,37 @@
 </head>
 
 <body>
-    <div id="app">
-
-        <div id="input-area">
-            <input type="text" v-model="book">
-            <button @click="addNewBook">确定</button>
-            <div>{{book}}</div>
-        </div>
-
-
+    <div id="app"> 
+        <c-input @add-new-book="addNewBook"></c-input> 
        <book-list :list="bookList"></book-list> 
     </div>
     <script src="./vue.js"></script>
     <script>
+
+        // 输入组件
+        Vue.component('c-input',  {
+            data() {
+                return {
+                    book: ''
+                }
+            },
+            methods: {
+                addNewBook(newBook) {
+                    // 这里要注意， HTML对大小写是敏感的， 所有的 事件名都会转成小写的形式。 
+                    // 如果这里用驼峰式的命名很容易导致找不到对应的事件方法。  
+                    this.$emit('add-new-book', this.book); 
+                    this.book = '' ;  
+                }
+            },
+            template: `
+            <div id="input-area">
+                <input type="text" v-model="book">
+                <button @click="addNewBook">确定</button>
+                <div>{{book}}</div>
+            </div>
+            `
+        });  
+
         // 列表组件  
         Vue.component('book-list', {
             props: {
@@ -38,7 +56,7 @@
             },
             template:  ` <div id="book-list">
                             <div id="title">{{title}}</div>
-                            <div v-for="item in bookList" :key="item">
+                            <div v-for="item in list" :key="item">
                                 {{ item }}
                             </div>
                         </div>`
@@ -54,13 +72,12 @@
                 book: ''
             }, 
             methods: {
-                addNewBook() { console.log('添加一个新的book . ');
+                addNewBook(book) { console.log('添加一个新的book . ');
                     console.log(this.bookList);
-                    console.log(this.book);
-                    
-                    
-                    this.bookList.push(this.book); 
-                    this.book ='';  
+                    console.log(book);
+            
+                    this.bookList.push(book); 
+                    console.log(this.bookList); 
                 }
             },
         });

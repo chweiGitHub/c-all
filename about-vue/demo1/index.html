@@ -9,8 +9,17 @@
     <style>
         .message-box {
             padding: 10px 20px;
+
+        }
+
+        .success {
             background: #4fc08d;
             border: 1px solid #42b983;
+        }
+
+        .waring {
+            background: #f55;
+            border: 1px solid #f55;
         }
 
         .message-box-close {
@@ -23,7 +32,8 @@
 
 <body>
     <div id="app">
-        <c-message :show="showMessage" @close="closeMessage">
+        <!-- .sync 来自己消化show的变化，不需要父组件来维护 -->
+        <c-message :show.sync="showMessage" class='success'>
             <template v-slot:title>
                 温馨提示
             </template>
@@ -31,6 +41,17 @@
                 add new book success.
             </template>
         </c-message>
+        <c-message :show.sync="showWaring" class="waring">
+            <template v-slot:title>
+                警告
+            </template>
+            <template>
+                The title of the book must not be empty.
+            </template>
+        </c-message>
+
+
+        <p><button @click="closeAllMessageDlg">关闭消息提醒框</button></p>
 
         <c-input v-model="book" @add-new-book="addNewBook" btntxt="confirm"></c-input>
         <c-input v-model.number="price" @add-new-book="updatePrice" btntxt="change-price"></c-input>
@@ -41,6 +62,8 @@
     </div>
     <script src="./vue.js"></script>
     <script>
+        Vue.prototype.$bus = new Vue();
+
         // 弹框组件
         Vue.component('c-message', {
             props: ['show'],
@@ -48,10 +71,19 @@
             <div class="message-box" v-if='show'>
                 <slot name='title'></slot>
                 <slot></slot>
-                <span class="message-box-close" @click="$emit('close')">X</span>
+                <span class="message-box-close" @click="$emit('update:show', false)">X</span>
             </div>
             `,
             methods: {},
+            mounted() {
+                this.$bus.$on('message-dlg-close', (p) => {
+                    console.log(
+                        'p:' + p
+                    );
+
+                    this.$emit('update:show', false);
+                });
+            },
         });
 
         // 输入组件
@@ -75,10 +107,15 @@
             },
             template: ` 
                 <div id="input-area">
-                    <input type="text" :value="value" @input="onInput">
+                    <input type="text" :value="value" @input="onInput" ref='inputElement'>
                     <button @click="addNewBook">{{btntxt}}</button> 
                 </div>   
-            `
+            `,
+            mounted() {
+                // ref/ refs的使用
+                // 设置获取焦点 
+                this.$refs.inputElement.focus();
+            },
         });
 
         // 列表组件  
@@ -104,7 +141,6 @@
             // template:  '<button v-on:click="count++">You clicked me {{ count }} times.</button>'
         });
 
-
         var app = new Vue({
             el: '#app',
             data: {
@@ -116,18 +152,22 @@
                 }],
                 book: '',
                 showMessage: false,
-                btnTxt: 'test-btn', 
+                showWaring: false,
+                btnTxt: 'test-btn',
                 price: 10
             },
             methods: {
                 addNewBook() {
                     console.log(this.book);
-
-                    this.bookList.push({
-                        name: this.book
-                    });
-                    this.book = '';
-                    this.showMessage = true;
+                    if (this.book != null && this.book.length > 0) {
+                        this.bookList.push({
+                            name: this.book
+                        });
+                        this.book = '';
+                        this.showMessage = true;
+                    } else {
+                        this.showWaring = true;
+                    }
                 },
                 closeMessage() {
                     this.showMessage = false;
@@ -135,9 +175,12 @@
                 updatePrice() {
                     // 下面的这种写法是无效的，没有达到响应式的目的
                     // this.bookList.forEach(item=>item.price=this.price);  
-
+                    
                     // 追加类的属性要用Vue.set方法来做。类似的api还有Vue.delete等。
-                    this.bookList.forEach(item=> Vue.set(item, 'price', this.price));   
+                    this.bookList.forEach(item => Vue.set(item, 'price', this.price));
+                },
+                closeAllMessageDlg() {
+                    this.$bus.$emit('message-dlg-close', false);
                 }
             },
         });
